@@ -28,7 +28,7 @@
 
 ## TODO
 + Parameter fine-tuning
-+ Explore methods to generate non-iid methods in sampling.py
++ Explore methods to generate non-iid data in sampling.py
 + Explore other methods except DDC
 + Extend to the case, where server also performs model training
 
