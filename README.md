@@ -2,7 +2,7 @@
 
 ## Directory tree
 
-'''
+```
 +---data
 +---dataset
 |   +---amazon
@@ -24,7 +24,7 @@
     \---options.py      # configuration
     \---sampling.py     # data processing
 +---main.py
-'''
+```
 
 ## TODO
 + Parameter fine-tuning
