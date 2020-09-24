@@ -29,8 +29,9 @@
 ## TODO
 + Parameter fine-tuning
 + Explore methods to generate non-iid data in sampling.py
++ Change the way to test the model 
 + Explore other methods except DDC
-+ Extend to the case, where server also performs model training
++ Extend to the case where server also performs model training
 
 ## Note
 + Download the Office31 dataset from [here](https://pan.baidu.com/s/1o8igXT4#list/path=%2F). And then unrar it in ./dataset/.
