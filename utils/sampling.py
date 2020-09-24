@@ -14,11 +14,11 @@ def data_noniid(dataset, num_users):
     dict_users = {i: np.array([], dtype='int64') for i in range(num_users)}
     num_imgs = int(len(dataset)/num_users)
     idxs = np.arange(len(dataset))
-    rand = num_users
+    rand = range(num_users)
     for i in range(num_users):        
-        rand_set = set(np.random.choice(rand, 1, replace=False))
-        rand = list(set(rand) - rand_set)
-        dict_users[i] = idxs[rand_set*num_imgs:(rand_set+1)*num_imgs]
+        rand_set = np.random.choice(rand, 1, replace=False)
+        rand = list(set(rand) - set(rand_set))
+        dict_users[i] = idxs[int(rand_set)*num_imgs:(int(rand_set)+1)*num_imgs]
 
     return dict_users
 

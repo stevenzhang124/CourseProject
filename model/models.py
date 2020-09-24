@@ -1,8 +1,8 @@
 import torch.nn as nn
 import torchvision
-from Coral import CORAL
-import mmd
-import backbone
+from model import backbone
+from model import mmd
+ 
 
 
 class Transfer_Net(nn.Module):
@@ -53,8 +53,6 @@ class Transfer_Net(nn.Module):
         if adapt_loss == 'mmd':
             mmd_loss = mmd.MMD_loss()
             loss = mmd_loss(X, Y)
-        elif adapt_loss == 'coral':
-            loss = CORAL(X, Y)
         else:
             loss = 0
         return loss

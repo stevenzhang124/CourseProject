@@ -9,8 +9,8 @@ import torch
 from utils.sampling import load_data, data_iid, data_noniid
 from utils.options import args_parser
 from utils.Fed import FedAvg
-from models.Update import LocalUpdate
-from models import models
+from model.Update import LocalUpdate
+from model import models
 
 if __name__ == '__main__':
     #parse args
@@ -32,7 +32,7 @@ if __name__ == '__main__':
 
     #load global model
     model = models.Transfer_Net(
-        args.n_class, transfer_loss='mmd', base_net='resnet50').to(args.device)
+        args.n_class, transfer_loss='mmd', base_net='resnet18').to(args.device)
     
 
     #copy weights
@@ -45,11 +45,15 @@ if __name__ == '__main__':
         w_locals, loss_locals = [], []
         m = max(int(args.frac * args.num_users), 1)
         idxs_users = np.random.choice(range(args.num_users), m, replace=False)
+        j=0
         for idx in idxs_users:
-            local = LocalUpdate(args=args, source_data, target_train_data, target_test_data, idxs=dict_users[idx])
+            local = LocalUpdate(args, source_data, target_train_data, target_test_data, idxs=dict_users[idx])
+            j = j + 1
+            print(j)
             w, loss = local.train(copy.deepcopy(model).to(args.device))
             w_locals.append(copy.deepcopy(w))
             loss_locals.append(copy.deepcopy(loss))
+
         # update global weights
         w_glob = FedAvg(w_locals)
 
