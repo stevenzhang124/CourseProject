@@ -4,7 +4,7 @@ import argparse
 def args_parser():
     parser = argparse.ArgumentParser()
     # federated arguments
-    parser.add_argument('--epochs', type=int, default=10,
+    parser.add_argument('--epochs', type=int, default=200,
                         help="rounds of training")
     parser.add_argument('--num_users', type=int,
                         default=15, help="number of users: K")
@@ -33,5 +33,6 @@ def args_parser():
                         help="GPU ID, -1 for CPU")
     parser.add_argument('--seed', type=int, default=1,
                         help='random seed (default: 1)')
+    parser.add_argument('--eval_interval', type=int, default=2)                    
     args = parser.parse_args()
     return args

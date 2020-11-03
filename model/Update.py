@@ -84,3 +84,4 @@ class LocalUpdate(object):
 
         print('max correct: {}, accuracy{: .2f}%\n'.format(
             correct, 100. * correct / len_target_dataset))
+        return 1. * correct / len_target_dataset
