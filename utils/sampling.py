@@ -1,6 +1,7 @@
 import numpy as np
-from torchvision import datasets, transforms
+
 import torch
+from torchvision import datasets, transforms
 
 
 def data_iid(dataset, num_users):
