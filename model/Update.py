@@ -1,7 +1,9 @@
+import random
+
+import numpy as np
+
 import torch
 from torch.utils.data import DataLoader, Dataset
-import numpy as np
-import random
 
 
 class DatasetSplit(Dataset):
