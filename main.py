@@ -7,7 +7,6 @@ import numpy as np
 import torch
 from model import models
 from model.Update import LocalUpdate
-from torch.utils.tensorboard import SummaryWriter
 from torchvision import datasets, transforms
 from utils.Fed import FedAvg
 from utils.options import args_parser
@@ -24,12 +23,12 @@ if __name__ == '__main__':
     torch.manual_seed(args.seed)
 
     # load dataset and distribute to users
-    source_name = "amazon"
-    target_name = "webcam"
+    source_name = "webcam"
+    target_name = "amazon"
 
     print('Src: %s, Tar: %s' % (source_name, target_name))
     source_data, target_train_data, target_test_data = load_data(
-        source_name, target_name, data_dir='/data/xian/Office-31/')
+        source_name, target_name, data_dir='dataset/')
 
     if args.iid:    # default false
         dict_users = data_iid(target_train_data, args.num_users)
@@ -45,54 +44,33 @@ if __name__ == '__main__':
 
     # training
     loss_train = []
-    best_acc = 0
 
-    with SummaryWriter() as writer:
-        for epoch in range(args.rounds):
-            w_locals, loss_locals = [], []
-            m = max(int(args.frac * args.num_users), 1)
-            idxs_users = np.random.choice(
-                range(args.num_users), m, replace=False)
-            j = 0
-            for idx in idxs_users:
-                local = LocalUpdate(
-                    args, source_data, target_train_data, target_test_data, idxs=dict_users[idx])
-                print(j)
-                j = j + 1
-                w, loss, optimizer = local.train(
-                    copy.deepcopy(model).to(args.device))
-                w_locals.append(copy.deepcopy(w))
-                loss_locals.append(copy.deepcopy(loss))
+    for iter in range(args.epochs):
+        w_locals, loss_locals = [], []
+        m = max(int(args.frac * args.num_users), 1)
+        idxs_users = np.random.choice(range(args.num_users), m, replace=False)
+        j = 0
+        for idx in idxs_users:
+            local = LocalUpdate(
+                args, source_data, target_train_data, target_test_data, idxs=dict_users[idx])
+            j = j + 1
+            print(j)
+            w, loss = local.train(copy.deepcopy(model).to(args.device))
+            w_locals.append(copy.deepcopy(w))
+            loss_locals.append(copy.deepcopy(loss))
 
-            # update global weights
-            w_glob = FedAvg(w_locals)
+        # update global weights
+        w_glob = FedAvg(w_locals)
 
-            # copy weight to global model
-            model.load_state_dict(w_glob)
+        # copy weight to global model
+        model.load_state_dict(w_glob)
 
-            # print loss
-            loss_avg = sum(loss_locals) / len(loss_locals)
-            print('Round {:3d}, Average loss {:.3f}'.format(epoch, loss_avg))
-            loss_train.append(loss_avg)
-            writer.add_scalar("loss_avg", loss_avg, global_step=epoch)
+    # plot loss curve
+    plt.figure()
+    plt.plot(range(len(loss_train)), loss_train)
+    plt.ylabel('train_loss')
+    plt.savefig('./save/fed_{}_{}_{}_C{}_iid{}.png'.format(source_name,
+                                                           target_name, args.epochs, args.frac, args.iid))
 
-            # evaluation and save
-            if epoch % args.eval_interval == 0:
-                # evaluate
-                acc = local.test(model.to(args.device))
-                writer.add_scalar("accuracy", acc, global_step=epoch)
-                # save last, best and delete
-                ckpt = {'epoch': epoch, 'model': model.state_dict(),
-                        'optimizer': optimizer}
-                torch.save(ckpt, f"./save/last_iid{args.iid}.pt")
-                if acc > best_acc and epoch < args.rounds - 1:
-                    torch.save(ckpt, f"./save/best_iid{args.iid}.pt")
-                    best_acc = acc
-                del ckpt
-
-        # plot loss curve
-        plt.figure()
-        plt.plot(range(len(loss_train)), loss_train)
-        plt.ylabel('train_loss')
-        plt.savefig('./save/fed_{}_{}_{}_C{}_iid{}.png'.format(source_name,
-                                                               target_name, args.rounds, args.frac, args.iid))
+    # testing
+    local.test(model.to(args.device))
