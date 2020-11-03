@@ -2,7 +2,6 @@ import torch.nn as nn
 import torchvision
 from model import backbone
 from model import mmd
- 
 
 
 class Transfer_Net(nn.Module):

@@ -15,12 +15,12 @@ class AlexNetFc(nn.Module):
         self.classifier = nn.Sequential()
         for i in range(6):
             self.classifier.add_module(
-                "classifier"+str(i), model_alexnet.classifier[i])
+                "classifier" + str(i), model_alexnet.classifier[i])
         self.__in_features = model_alexnet.classifier[6].in_features
 
     def forward(self, x):
         x = self.features(x)
-        x = x.view(x.size(0), 256*6*6)
+        x = x.view(x.size(0), 256 * 6 * 6)
         x = self.classifier(x)
         return x
 
