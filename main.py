@@ -74,7 +74,7 @@ if __name__ == '__main__':
             loss_train.append(loss_avg)
             writer.add_scalar("loss_avg", loss_avg, global_step=epoch)
 
-            # evaluation and save
+            # evaluate and save
             if epoch % args.eval_interval == 0:
                 # evaluate
                 acc = local.test(model.to(args.device))
