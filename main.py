@@ -1,4 +1,5 @@
 import copy
+import os
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -7,8 +8,8 @@ import numpy as np
 import torch
 from model import models
 from model.Update import LocalUpdate
-from torchvision import datasets, transforms
 from torch.utils.tensorboard import SummaryWriter
+from torchvision import datasets, transforms
 from utils.Fed import FedAvg
 from utils.options import args_parser
 from utils.sampling import data_iid, data_noniid, load_data
@@ -28,8 +29,11 @@ if __name__ == '__main__':
     target_name = "amazon"
 
     print('Src: %s, Tar: %s' % (source_name, target_name))
+    current_path = os.path.abspath(__file__)
+    father_path = os.path.abspath(
+        os.path.dirname(current_path) + os.path.sep + ".")
     source_data, target_train_data, target_test_data = load_data(
-        source_name, target_name, data_dir='/data/xian/Office-31/')
+        source_name, target_name, data_dir=os.path.join(father_path, 'dataset'))
 
     if args.iid:    # default false
         dict_users = data_iid(target_train_data, args.num_users)
@@ -51,7 +55,8 @@ if __name__ == '__main__':
         for epoch in range(args.epochs):
             w_locals, loss_locals = [], []
             m = max(int(args.frac * args.num_users), 1)
-            idxs_users = np.random.choice(range(args.num_users), m, replace=False)
+            idxs_users = np.random.choice(
+                range(args.num_users), m, replace=False)
             j = 0
             for idx in idxs_users:
                 local = LocalUpdate(
@@ -74,7 +79,7 @@ if __name__ == '__main__':
             loss_train.append(loss_avg)
             writer.add_scalar("loss_avg", loss_avg, global_step=epoch)
 
-            # evaluate and save
+            # evaluation and save
             if epoch % args.eval_interval == 0:
                 # evaluate
                 acc = local.test(model.to(args.device))
@@ -92,7 +97,7 @@ if __name__ == '__main__':
         plt.plot(range(len(loss_train)), loss_train)
         plt.ylabel('train_loss')
         plt.savefig('./save/fed_{}_{}_{}_C{}_iid{}.png'.format(source_name,
-                                                            target_name, args.epochs, args.frac, args.iid))
+                                                               target_name, args.epochs, args.frac, args.iid))
 
         # testing
         local.test(model.to(args.device))

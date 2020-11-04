@@ -1,33 +1,40 @@
 import copy
+
 import matplotlib
 import matplotlib.pyplot as plt
-matplotlib.use('Agg')
 import numpy as np
 
 import torch
-from torchvision import datasets, transforms
-from torch.utils.tensorboard import SummaryWriter
+from model import models
+from model.Update import LocalUpdate
 from torch.utils.data import DataLoader, Dataset
+from torch.utils.tensorboard import SummaryWriter
+from torchvision import datasets, transforms
 from utils.Fed import FedAvg
 from utils.options import args_parser
 from utils.sampling import data_iid, data_noniid, load_data
-from model import models
-from model.Update import LocalUpdate
+
+matplotlib.use('Agg')
 
 
 # parse args
 args = args_parser()
-args.device = torch.device('cuda:{}'.format(args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
+args.device = torch.device('cuda:{}'.format(
+    args.gpu) if torch.cuda.is_available() and args.gpu != -1 else 'cpu')
 torch.manual_seed(args.seed)
 
 # load dataset
 source_name = "webcam"
 target_name = "amazon"
 print('Src: %s, Tar: %s' % (source_name, target_name))
-source_data, target_train_data, target_test_data = load_data(source_name, target_name, data_dir='/data/xian/Office-31/')
-source_loader = DataLoader(source_data, batch_size=args.local_bs, shuffle=True, num_workers=8)
-target_train_loader = DataLoader(target_train_data, batch_size=args.local_bs, shuffle=True, num_workers=8)
-target_test_loader = DataLoader(target_test_data, batch_size=args.bs, shuffle=True, num_workers=8)
+source_data, target_train_data, target_test_data = load_data(
+    source_name, target_name, data_dir='/data/xian/Office-31/')
+source_loader = DataLoader(
+    source_data, batch_size=args.local_bs, shuffle=True, num_workers=8)
+target_train_loader = DataLoader(
+    target_train_data, batch_size=args.local_bs, shuffle=True, num_workers=8)
+target_test_loader = DataLoader(
+    target_test_data, batch_size=args.bs, shuffle=True, num_workers=8)
 
 best_acc = 0
 criterion = torch.nn.CrossEntropyLoss()
@@ -46,7 +53,8 @@ def test(model):
             pred = torch.max(model.predict(data), 1)[1]
             correct += torch.sum(pred == label)
 
-    print('max correct: {}, accuracy{: .2f}%\n'.format(correct, 100. * correct / len_target_dataset))
+    print('max correct: {}, accuracy{: .2f}%\n'.format(
+        correct, 100. * correct / len_target_dataset))
     return 1. * correct / len_target_dataset
 
 
@@ -56,9 +64,9 @@ def baseline_1():
     """
     model = models.Base_Net(args.n_class, base_net='resnet18').to(args.device)
     optimizer = torch.optim.SGD(
-        [{'params': model.base_network.parameters()}, 
-        {'params': model.classifier_layer.parameters(), 
-        'lr': 10 * args.lr}], 
+        [{'params': model.base_network.parameters()},
+         {'params': model.classifier_layer.parameters(),
+          'lr': 10 * args.lr}],
         lr=args.lr, momentum=args.momentum, weight_decay=args.l2_decay)
 
     global best_acc
@@ -66,7 +74,7 @@ def baseline_1():
     with SummaryWriter() as writer:
 
         for epoch in range(args.epochs):
-                
+
             model.train()
 
             for batch_i, (data, label) in enumerate(source_loader):
@@ -102,11 +110,12 @@ def baseline_2():
     """
     train on source domain (labeld) + target domain (unlabeled). No FL.
     """
-    model = models.Transfer_Net(args.n_class, transfer_loss='mmd', base_net='resnet18').to(args.device)
+    model = models.Transfer_Net(
+        args.n_class, transfer_loss='mmd', base_net='resnet18').to(args.device)
     optimizer = torch.optim.SGD(
-        [{'params': model.base_network.parameters()}, 
-        {'params': model.classifier_layer.parameters(), 
-        'lr': 10 * args.lr}], 
+        [{'params': model.base_network.parameters()},
+         {'params': model.classifier_layer.parameters(),
+          'lr': 10 * args.lr}],
         lr=args.lr, momentum=args.momentum, weight_decay=args.l2_decay)
 
     global best_acc
@@ -114,13 +123,14 @@ def baseline_2():
     with SummaryWriter() as writer:
 
         for epoch in range(args.epochs):
-                
+
             model.train()
 
             for batch_i, ((data_source, label_source), (data_target, _)) in enumerate(zip(source_loader, target_train_loader)):
 
                 batches_done = len(source_loader) * epoch + batch_i
-                data_source, label_source = data_source.to(args.device), label_source.to(args.device)
+                data_source, label_source = data_source.to(
+                    args.device), label_source.to(args.device)
                 data_target = data_target.to(args.device)
 
                 optimizer.zero_grad()
@@ -150,9 +160,7 @@ def baseline_2():
                     del ckpt
 
 
-
 if __name__ == '__main__':
 
     # baseline_1()
     baseline_2()
-

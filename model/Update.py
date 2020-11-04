@@ -45,7 +45,8 @@ class LocalUpdate(object):
         for e in range(self.args.local_ep):
             batch_loss = []
             model.train()
-            iter_source, iter_target = iter(self.source_loader), iter(self.target_train_loader)
+            iter_source, iter_target = iter(
+                self.source_loader), iter(self.target_train_loader)
             n_batch = min(len_source_loader, len_target_loader)
             criterion = torch.nn.CrossEntropyLoss()
             for i in range(n_batch):
@@ -56,7 +57,8 @@ class LocalUpdate(object):
                 data_target = data_target.to(self.args.device)
 
                 optimizer.zero_grad()
-                label_source_pred, transfer_loss = model(data_source, data_target)
+                label_source_pred, transfer_loss = model(
+                    data_source, data_target)
                 clf_loss = criterion(label_source_pred, label_source)
                 loss = clf_loss + self.args.lam * transfer_loss
                 loss.backward()
