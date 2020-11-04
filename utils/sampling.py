@@ -31,11 +31,10 @@ def data_noniid(dataset, num_users):
     return dict_users
 
 
-def load_data(src, tar, data_dir='dataset'):
+def load_data(src, tar, data_dir='dataset', use_cv2=False):
     folder_src = os.path.join(os.path.join(data_dir, src), 'images')
     folder_tar = os.path.join(os.path.join(data_dir, tar), 'images')
 
-    use_cv2 = True
     if use_cv2:
         import cv2
         from opencv_transforms import transforms
