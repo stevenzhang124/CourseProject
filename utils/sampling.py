@@ -4,7 +4,7 @@ from functools import wraps
 import numpy as np
 
 import torch
-from torchvision import datasets, transforms
+from torchvision import datasets
 
 
 def data_iid(dataset, num_users):
@@ -69,6 +69,7 @@ def load_data(src, tar, data_dir='dataset', use_cv2=False):
             root=folder_tar, transform=transform['test'], loader=loader_opencv)
         # target_test_loader = torch.utils.data.DataLoader(target_test_data, batch_size=batch_size, shuffle=True, **kwargs, drop_last = False)
     else:
+        from torchvision import transforms
         transform = {
             'train': transforms.Compose(
                 [transforms.Resize((256, 256)),
