@@ -27,11 +27,14 @@ torch.manual_seed(args.seed)
 source_name = "webcam"
 target_name = "amazon"
 print('Src: %s, Tar: %s' % (source_name, target_name))
-source_data, target_train_data, target_test_data = \
-    load_data(source_name, target_name, data_dir='/data/xian/Office-31/')
-source_loader = DataLoader(source_data, batch_size=args.local_bs, shuffle=True, num_workers=8)
-target_train_loader = DataLoader(target_train_data, batch_size=args.local_bs, shuffle=True, num_workers=8)
-target_test_loader = DataLoader(target_test_data, batch_size=args.bs, shuffle=True, num_workers=8)
+source_data, target_train_data, target_test_data = load_data(
+    source_name, target_name, data_dir='dataset')
+source_loader = DataLoader(
+    source_data, batch_size=args.local_bs, shuffle=True, num_workers=8)
+target_train_loader = DataLoader(
+    target_train_data, batch_size=args.local_bs, shuffle=True, num_workers=8)
+target_test_loader = DataLoader(
+    target_test_data, batch_size=args.bs, shuffle=True, num_workers=8)
 
 best_acc = 0
 criterion = torch.nn.CrossEntropyLoss()
