@@ -3,11 +3,11 @@
 <br>
 
 ## Methods (see plot in tensorboard)
-1. FL + non-iid + ddm: local_ep=1, lam=5
-1. FL + non-iid + ddm: local_ep=5, lam=5
-1. FL + non-iid + ddm: local_ep=1, lam=0
+1. FL + non-iid + ddm (lam=5): local_ep=1
+1. FL + non-iid + ddm (lam=5): local_ep=5
+1. FL + non-iid + no_ddm (lam=0): local_ep=1
+1. no FL + non-iid + ddm (lam=5)
 1. no FL + non-iid + no_ddm
-1. no FL + non-iid + ddm
 <br>
 
 ## Results
@@ -16,5 +16,5 @@
 | 1 | 56.2 |
 | 2 | 55.0 |
 | 3 | 55.1 |
-| 4 | 50.0 |
-| 5 | 49.4 |
+| 4 | 57.2 |
+| 5 | 57.2 |

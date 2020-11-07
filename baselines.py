@@ -28,13 +28,13 @@ source_name = "webcam"
 target_name = "amazon"
 print('Src: %s, Tar: %s' % (source_name, target_name))
 source_data, target_train_data, target_test_data = load_data(
-    source_name, target_name, data_dir='dataset')
+    source_name, target_name, data_dir='/data/xian/Office-31')
 source_loader = DataLoader(
-    source_data, batch_size=args.local_bs, shuffle=True, num_workers=8)
+    source_data, batch_size=args.local_bs, shuffle=True, num_workers=8, drop_last=True)
 target_train_loader = DataLoader(
-    target_train_data, batch_size=args.local_bs, shuffle=True, num_workers=8)
+    target_train_data, batch_size=args.local_bs, shuffle=True, num_workers=8, drop_last=True)
 target_test_loader = DataLoader(
-    target_test_data, batch_size=args.bs, shuffle=True, num_workers=8)
+    target_test_data, batch_size=args.bs, shuffle=True, num_workers=8, drop_last=True)
 
 best_acc = 0
 criterion = torch.nn.CrossEntropyLoss()
@@ -65,11 +65,11 @@ def baseline_1():
     model = models.Transfer_Net(args.n_class, use_domain_loss=False).to(args.device)
     optimizer = torch.optim.SGD(
         [{'params': model.base_network.parameters()},
-        {'params': model.fc_layers.parameters(), 'lr': 5 * args.lr},
-        {'params': model.bottleneck_layer.parameters(), 'lr': 10 * args.lr},
-        {'params': model.classifier_layer.parameters(), 'lr': 10 * args.lr}], 
+        {'params': model.fc_layers.parameters(), 'lr': 1 * args.lr},
+        {'params': model.bottleneck_layer.parameters(), 'lr': 2 * args.lr},
+        {'params': model.classifier_layer.parameters(), 'lr': 2 * args.lr}], 
         lr=args.lr, momentum=args.momentum, weight_decay=args.l2_decay)
-
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = 2000, gamma = 0.1)
     global best_acc
 
     with SummaryWriter() as writer:
@@ -86,6 +86,7 @@ def baseline_1():
                 loss = criterion(clf, label)
                 loss.backward()
                 optimizer.step()
+                scheduler.step()
 
                 writer.add_scalar("train_loss", loss, global_step=batches_done)
                 print(f'Epoch {epoch}-Batch {batch_i}, loss: {loss:.3}')
@@ -113,11 +114,11 @@ def baseline_2():
         args.n_class, transfer_loss='mmd', base_net='resnet18').to(args.device)
     optimizer = torch.optim.SGD(
         [{'params': model.base_network.parameters()},
-        {'params': model.fc_layers.parameters(), 'lr': 5 * args.lr},
-        {'params': model.bottleneck_layer.parameters(), 'lr': 10 * args.lr},
-        {'params': model.classifier_layer.parameters(), 'lr': 10 * args.lr}], 
+        {'params': model.fc_layers.parameters(), 'lr': 1 * args.lr},
+        {'params': model.bottleneck_layer.parameters(), 'lr': 2 * args.lr},
+        {'params': model.classifier_layer.parameters(), 'lr': 2 * args.lr}], 
         lr=args.lr, momentum=args.momentum, weight_decay=args.l2_decay)
-
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = 2000, gamma = 0.1)
     global best_acc
 
     with SummaryWriter() as writer:
@@ -140,6 +141,7 @@ def baseline_2():
                 loss = clf_loss + args.lam * transfer_loss
                 loss.backward()
                 optimizer.step()
+                scheduler.step()
 
                 writer.add_scalar("train_loss", loss, global_step=batches_done)
                 print(f'Epoch {epoch}-Batch {batch_i}, loss: {loss:.3}')
@@ -161,5 +163,9 @@ def baseline_2():
 
 if __name__ == '__main__':
 
-    # baseline_1()
-    baseline_2()
+    def func_None():
+        print("cannot find func")
+    
+    func_dict = {1: baseline_1, 2: baseline_2}
+    func_dict.get(args.baseline, func_None)()
+    
