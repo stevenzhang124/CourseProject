@@ -32,8 +32,9 @@ if __name__ == '__main__':
     current_path = os.path.abspath(__file__)
     father_path = os.path.abspath(
         os.path.dirname(current_path) + os.path.sep + ".")
+    father_path = "/data/xian/Office-31/"
     source_data, target_train_data, target_test_data = load_data(
-        source_name, target_name, data_dir=os.path.join(father_path, 'dataset'))
+        source_name, target_name, data_dir=father_path)
 
     if args.iid:    # default false
         dict_users = data_iid(target_train_data, args.num_users)
@@ -60,7 +61,7 @@ if __name__ == '__main__':
             j = 0
             for idx in idxs_users:
                 local = LocalUpdate(
-                    args, source_data, target_train_data, target_test_data, idxs=dict_users[idx])
+                    args, source_data, target_train_data, target_test_data, epoch, dict_users[idx])
                 j = j + 1
                 print(j)
                 w, loss = local.train(copy.deepcopy(model).to(args.device))
@@ -86,18 +87,10 @@ if __name__ == '__main__':
                 writer.add_scalar("accuracy", acc, global_step=epoch)
                 # save last, best and delete
                 ckpt = {'epoch': epoch, 'model': model.state_dict()}
-                torch.save(ckpt, f"./save/last_iid{args.iid}.pt")
                 if acc > best_acc and epoch < args.epochs - 1:
-                    torch.save(ckpt, f"./save/best_iid{args.iid}.pt")
+                    torch.save(ckpt, f"./save/best_iid{args.iid}_localep{args.local_ep}_lam{args.lam}.pt")
                     best_acc = acc
                 del ckpt
-
-        # plot loss curve
-        plt.figure()
-        plt.plot(range(len(loss_train)), loss_train)
-        plt.ylabel('train_loss')
-        plt.savefig('./save/fed_{}_{}_{}_C{}_iid{}.png'.format(source_name,
-                                                               target_name, args.epochs, args.frac, args.iid))
 
         # testing
         local.test(model.to(args.device))

@@ -4,7 +4,7 @@ import argparse
 def args_parser():
     parser = argparse.ArgumentParser()
     # federated arguments
-    parser.add_argument('--epochs', type=int, default=100,
+    parser.add_argument('--epochs', type=int, default=200,
                         help="rounds of training")
     parser.add_argument('--num_users', type=int,
                         default=15, help="number of users: K")
@@ -22,7 +22,7 @@ def args_parser():
                         help="SGD momentum (default: 0.9)")
     parser.add_argument('--n_class', type=int, default=31,
                         help="Number of classes")
-    parser.add_argument('--lam', type=float, default=10,
+    parser.add_argument('--lam', type=float, default=5,
                         help="lambda of transfer loss")
     parser.add_argument('--l2_decay', type=float, default=0, help="l2_deacy")
 

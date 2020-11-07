@@ -27,14 +27,11 @@ torch.manual_seed(args.seed)
 source_name = "webcam"
 target_name = "amazon"
 print('Src: %s, Tar: %s' % (source_name, target_name))
-source_data, target_train_data, target_test_data = load_data(
-    source_name, target_name, data_dir='/data/xian/Office-31/')
-source_loader = DataLoader(
-    source_data, batch_size=args.local_bs, shuffle=True, num_workers=8)
-target_train_loader = DataLoader(
-    target_train_data, batch_size=args.local_bs, shuffle=True, num_workers=8)
-target_test_loader = DataLoader(
-    target_test_data, batch_size=args.bs, shuffle=True, num_workers=8)
+source_data, target_train_data, target_test_data = \
+    load_data(source_name, target_name, data_dir='/data/xian/Office-31/')
+source_loader = DataLoader(source_data, batch_size=args.local_bs, shuffle=True, num_workers=8)
+target_train_loader = DataLoader(target_train_data, batch_size=args.local_bs, shuffle=True, num_workers=8)
+target_test_loader = DataLoader(target_test_data, batch_size=args.bs, shuffle=True, num_workers=8)
 
 best_acc = 0
 criterion = torch.nn.CrossEntropyLoss()
@@ -62,11 +59,12 @@ def baseline_1():
     """
     train on source domain (labeled). No FL.
     """
-    model = models.Base_Net(args.n_class, base_net='resnet18').to(args.device)
+    model = models.Transfer_Net(args.n_class, use_domain_loss=False).to(args.device)
     optimizer = torch.optim.SGD(
         [{'params': model.base_network.parameters()},
-         {'params': model.classifier_layer.parameters(),
-          'lr': 10 * args.lr}],
+        {'params': model.fc_layers.parameters(), 'lr': 5 * args.lr},
+        {'params': model.bottleneck_layer.parameters(), 'lr': 10 * args.lr},
+        {'params': model.classifier_layer.parameters(), 'lr': 10 * args.lr}], 
         lr=args.lr, momentum=args.momentum, weight_decay=args.l2_decay)
 
     global best_acc
@@ -80,8 +78,7 @@ def baseline_1():
             for batch_i, (data, label) in enumerate(source_loader):
                 batches_done = len(source_loader) * epoch + batch_i
                 data, label = data.to(args.device), label.to(args.device)
-
-                clf = model(data)
+                clf = model(data, 0)    # 0 is a place holder
                 optimizer.zero_grad()
                 loss = criterion(clf, label)
                 loss.backward()
@@ -99,9 +96,8 @@ def baseline_1():
                     writer.add_scalar("accuracy", acc, global_step=epoch)
                     # save last, best and delete
                     ckpt = {'epoch': epoch, 'model': model.state_dict()}
-                    torch.save(ckpt, f"./save/last_baseline1.pt")
                     if acc > best_acc and epoch < args.epochs - 1:
-                        torch.save(ckpt, f"./save/best_last_baseline1.pt")
+                        torch.save(ckpt, f"./save/best_baseline1.pt")
                         best_acc = acc
                     del ckpt
 
@@ -114,8 +110,9 @@ def baseline_2():
         args.n_class, transfer_loss='mmd', base_net='resnet18').to(args.device)
     optimizer = torch.optim.SGD(
         [{'params': model.base_network.parameters()},
-         {'params': model.classifier_layer.parameters(),
-          'lr': 10 * args.lr}],
+        {'params': model.fc_layers.parameters(), 'lr': 5 * args.lr},
+        {'params': model.bottleneck_layer.parameters(), 'lr': 10 * args.lr},
+        {'params': model.classifier_layer.parameters(), 'lr': 10 * args.lr}], 
         lr=args.lr, momentum=args.momentum, weight_decay=args.l2_decay)
 
     global best_acc
@@ -153,9 +150,8 @@ def baseline_2():
                     writer.add_scalar("accuracy", acc, global_step=epoch)
                     # save last, best and delete
                     ckpt = {'epoch': epoch, 'model': model.state_dict()}
-                    torch.save(ckpt, f"./save/last_baseline2.pt")
                     if acc > best_acc and epoch < args.epochs - 1:
-                        torch.save(ckpt, f"./save/best_last_baseline2.pt")
+                        torch.save(ckpt, f"./save/best_baseline2.pt")
                         best_acc = acc
                     del ckpt
 
