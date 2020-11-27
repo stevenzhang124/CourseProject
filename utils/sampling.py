@@ -98,3 +98,28 @@ def load_data(src, tar, data_dir='dataset', use_cv2=False):
         # target_test_loader = torch.utils.data.DataLoader(target_test_data, batch_size=batch_size, shuffle=True, **kwargs, drop_last = False)
 
     return source_data, target_train_data, target_test_data
+
+def load_unlabeled_data(tar, data_dir='dataset/'):
+    from torchvision import transforms
+
+    folder_tar = data_dir + tar + '/images'
+
+    transform = {
+        'weak': transforms.Compose(
+            [transforms.Resize([224, 224]),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])]),
+        'strong': transforms.Compose(
+            [transforms.Resize([256, 256]),
+                transforms.RandomCrop(224),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                     std=[0.229, 0.224, 0.225])])
+    }
+
+    unlabeled_weak_data = datasets.ImageFolder(root=folder_tar, transform=transform['weak'])
+    unlabeled_strong_data = datasets.ImageFolder(root=folder_tar, transform=transform['strong'])
+
+    return unlabeled_weak_data, unlabeled_strong_data

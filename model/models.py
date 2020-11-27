@@ -2,6 +2,28 @@ import torch.nn as nn
 import torchvision
 from model import backbone, mmd
 
+class Base_Net(nn.Module):
+    def __init__(self, num_class, base_net='resnet18', width=1024):
+        super(Base_Net, self).__init__()
+        self.base_network = backbone.network_dict[base_net]()
+        classifier_layer_list = [
+            nn.Linear(self.base_network.output_num(), width),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(width, num_class)
+            ]
+        self.classifier_layer = nn.Sequential(*classifier_layer_list)
+        for i in range(2):
+            self.classifier_layer[i * 3].weight.data.normal_(0, 0.01)
+            self.classifier_layer[i * 3].bias.data.fill_(0.0)
+
+    def forward(self, data):
+        feature = self.base_network(data)
+        clf = self.classifier_layer(feature)
+        return clf
+
+    def predict(self, data):
+        return self.forward(data)
 
 class Transfer_Net(nn.Module):
     def __init__(self, num_class, base_net='resnet18', transfer_loss='mmd', use_domain_loss=True, width=1024, bottleneck_width=256):
