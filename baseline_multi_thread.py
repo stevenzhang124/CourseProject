@@ -109,7 +109,7 @@ def test(model, target_test_loader):
 
 
 def client_thread(args, unlabeled_weak_data, unlabeled_strong_data, model, dict_users, idx):
-    model = copy.deepcopy(model)
+    model = copy.deepcopy(model).to(args.device)
     w_local = client_train(args, unlabeled_weak_data, unlabeled_strong_data, model.to(
         args.device), idxs=dict_users[idx])
     w_locals.append(copy.deepcopy(w_local))
@@ -193,7 +193,8 @@ if __name__ == '__main__':
                     # save last, best and delete
                     ckpt = {'epoch': epoch, 'model': global_model.state_dict()}
                     if acc > best_acc and epoch < args.epochs - 1:
-                        torch.save(ckpt, f"./save/best_baseline3.pt")
+                        torch.save(
+                            ckpt, f"./save/best_base_local%s_server%s_line3.pt" % (args.local_ep, args.epochs))
                         best_acc = acc
                     del ckpt
 
