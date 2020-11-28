@@ -12,7 +12,8 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision import datasets, transforms
 from utils.Fed import FedAvg
 from utils.options import args_parser
-from utils.sampling import data_iid, data_noniid, load_data
+from utils.sampling import data_iid, data_noniid, load_data, calulate_non_iidness
+
 
 matplotlib.use('Agg')
 
@@ -37,9 +38,13 @@ if __name__ == '__main__':
         source_name, target_name, data_dir=father_path)
 
     if args.iid:    # default false
-        dict_users = data_iid(target_train_data, args.num_users)
+        dict_users, dict_classes = data_iid(target_train_data, args.num_users)
     else:
-        dict_users = data_noniid(target_train_data, args.num_users)
+        dict_users, dict_classes = data_noniid(target_train_data, args.num_users)
+
+    # calculate non-iidness
+    non_iidness = calulate_non_iidness(args, dict_classes)
+    print(f"non_iidness = {non_iidness}")
 
     # load global model
     model = models.Transfer_Net(

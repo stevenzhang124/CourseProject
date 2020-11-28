@@ -12,7 +12,7 @@ from torch.utils.tensorboard import SummaryWriter
 from torchvision import datasets, transforms
 from utils.Fed import FedAvg
 from utils.options import args_parser
-from utils.sampling import data_iid, data_noniid, load_data
+from utils.sampling import load_data
 
 matplotlib.use('Agg')
 

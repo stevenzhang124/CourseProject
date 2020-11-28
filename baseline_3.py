@@ -10,7 +10,7 @@ from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, Dataset
 from utils.Fed import FedAvg
 from utils.options import args_parser
-from utils.sampling import data_iid, data_noniid, load_data, load_unlabeled_data
+from utils.sampling import data_iid, data_noniid, load_data, load_unlabeled_data, calulate_non_iidness
 from model import models
 from model.Update import LocalUpdate, DatasetSplit
 
@@ -111,9 +111,13 @@ if __name__ == '__main__':
     unlabeled_weak_data, unlabeled_strong_data = load_unlabeled_data(target_name, data_dir='dataset/')
 
     if args.iid:  # default false
-        dict_users = data_iid(unlabeled_weak_data, args.num_users)
+        dict_users, dict_classes = data_iid(unlabeled_weak_data, args.num_users)
     else:
-        dict_users = data_noniid(unlabeled_weak_data, args.num_users)
+        dict_users, dict_classes = data_noniid(unlabeled_weak_data, args.num_users)
+
+    # calculate non-iidness
+    non_iidness = calulate_non_iidness(args, dict_classes)
+    print(f"non_iidness = {non_iidness}")
 
     source_loader = DataLoader(source_data, batch_size=args.local_bs, shuffle=True, num_workers=4)
     target_test_loader = DataLoader(target_test_data, batch_size=args.bs, shuffle=True, num_workers=4)
