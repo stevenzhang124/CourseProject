@@ -9,6 +9,7 @@ import torch
 from model import models
 from model.Update import DatasetSplit, LocalUpdate
 from torch.utils.data import DataLoader, Dataset
+from torch.utils.tensorboard import SummaryWriter
 from torchvision import datasets, transforms
 from utils.Fed import FedAvg
 from utils.options import args_parser
@@ -65,7 +66,7 @@ def client_train(args, unlabeled_weak_data, unlabeled_strong_data, model, idxs):
     return model.state_dict()
 
 
-def server_train(args, source_loader, model):
+def server_train(args, source_loader, model, writer, epoch):
     optimizer = torch.optim.SGD(
         [{'params': model.base_network.parameters()},
          {'params': model.classifier_layer.parameters(),
@@ -73,6 +74,7 @@ def server_train(args, source_loader, model):
         lr=args.lr, momentum=args.momentum, weight_decay=args.l2_decay)
 
     for i, (data, label) in enumerate(source_loader):
+        batches_done = len(source_loader) * epoch + i
         data, label = data.to(args.device), label.to(args.device)
         optimizer.zero_grad()
 
@@ -80,6 +82,9 @@ def server_train(args, source_loader, model):
         loss = criterion(clf, label)
         loss.backward()
         optimizer.step()
+
+        writer.add_scalar("train_loss", loss, global_step=batches_done)
+        print(f'Epoch {epoch}-Batch {i}, loss: {loss:.3}')
 
     w_server = model.state_dict()
     return w_server
@@ -142,36 +147,54 @@ if __name__ == '__main__':
     global_model = models.Base_Net(
         args.n_class, base_net='resnet18').to(args.device)
 
-    for epoch in range(args.epochs):
-        # client train, unsupervised training
-        global w_locals
-        w_locals = []
-        m = max(int(args.frac * args.num_users), 1)
-        idxs_users = np.random.choice(range(args.num_users), m, replace=False)
-        j = 0
-        threads = []
-        for idx in idxs_users:
-            j = j + 1
+    global best_acc
+    best_acc = 0
 
-            print("user ", j)
-            # client training
-            thread = threading.Thread(target=client_thread, args=(
-                args, unlabeled_weak_data, unlabeled_strong_data, global_model, dict_users, idx))
-            thread.start()
-            threads.append(thread)
-        [thread.join() for thread in threads]
-        # server training
-        w_server = server_train(args, source_loader,
-                                copy.deepcopy(global_model).to(args.device))
+    with SummaryWriter() as writer:
+        for epoch in range(args.epochs):
+            # client train, unsupervised training
+            global w_locals
+            w_locals = []
+            m = max(int(args.frac * args.num_users), 1)
+            idxs_users = np.random.choice(
+                range(args.num_users), m, replace=False)
+            j = 0
+            threads = []
+            for idx in idxs_users:
+                j = j + 1
 
-        print(type(w_locals))
-        # parameter aggregation
-        w_locals.append(copy.deepcopy(w_server))
-        print(type(w_locals))
-        w_avg = FedAvg(w_locals)
+                print("user ", j)
+                # client training
+                thread = threading.Thread(target=client_thread, args=(
+                    args, unlabeled_weak_data, unlabeled_strong_data, global_model, dict_users, idx))
+                thread.start()
+                threads.append(thread)
+            [thread.join() for thread in threads]
+            # server training
+            w_server = server_train(args, source_loader,
+                                    copy.deepcopy(global_model).to(args.device), writer, epoch)
 
-        global_model.load_state_dict(w_avg)
-        print("global epoch ", epoch)
+            print(type(w_locals))
+            # parameter aggregation
+            w_locals.append(copy.deepcopy(w_server))
+            print(type(w_locals))
+            w_avg = FedAvg(w_locals)
+
+            global_model.load_state_dict(w_avg)
+            print("global epoch ", epoch)
+
+            if epoch % args.eval_interval == 0:
+                global_model.eval()
+                with torch.no_grad():
+                    # evaluate
+                    acc = test(global_model.to(
+                        args.device), target_test_loader)
+                    writer.add_scalar("accuracy", acc, global_step=epoch)
+                    # save last, best and delete
+                    ckpt = {'epoch': epoch, 'model': global_model.state_dict()}
+                    if acc > best_acc and epoch < args.epochs - 1:
+                        torch.save(ckpt, f"./save/best_baseline3.pt")
+                        best_acc = acc
+                    del ckpt
 
     # model test
-    test(global_model.to(args.device), target_test_loader)
