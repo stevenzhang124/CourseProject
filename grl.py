@@ -148,6 +148,9 @@ if __name__ == '__main__':
 
     with SummaryWriter() as writer:
         for epoch in range(args.epochs):
+            
+            reverse_rate = max(0, (epoch-10)/100)
+            global_model.domain_discriminator[0].set_lambda(reverse_rate)
 
             # client train, unsupervised training
             w_locals = []
