@@ -12,9 +12,9 @@ def args_parser():
                         help="the fraction of clients: C")
     parser.add_argument('--local_ep', type=int, default=5,
                         help="the number of local epochs: E")
-    parser.add_argument('--local_bs', type=int, default=10,
+    parser.add_argument('--local_bs', type=int, default=32,
                         help="local batch size: B")
-    parser.add_argument('--bs', type=int, default=16, help="test batch size")
+    parser.add_argument('--bs', type=int, default=32, help="test batch size")
 
     # model arguments
     parser.add_argument('--lr', type=float, default=1e-3, help="learning rate")
@@ -24,6 +24,8 @@ def args_parser():
                         help="Number of classes")
     parser.add_argument('--lam', type=float, default=5,
                         help="lambda of transfer loss")
+    parser.add_argument('--domain_lamda', type=float, default=1,
+                        help="lambda of domain loss")
     parser.add_argument('--l2_decay', type=float, default=0, help="l2_deacy")
 
     # other arguments

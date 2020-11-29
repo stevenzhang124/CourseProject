@@ -4,6 +4,7 @@ from functools import wraps
 import numpy as np
 import torch
 from torchvision import datasets
+from randaugment import RandAugment
 
 
 def calulate_non_iidness(args, dict_classes):
@@ -164,7 +165,9 @@ def load_unlabeled_data(tar, data_dir='dataset/'):
             [transforms.Resize([256, 256]),
                 transforms.RandomCrop(224),
                 transforms.RandomHorizontalFlip(),
+                RandAugment(),  # Paper: RandAugment: Practical data augmentation with no separate search
                 transforms.ToTensor(),
+                 # Cutout(size=16), # (https://github.com/uoguelph-mlrg/Cutout/blob/master/util/cutout.py)
                 transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])])
     }
