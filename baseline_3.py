@@ -24,9 +24,9 @@ currently, there is no domain adaptation
 
 def client_train(args, unlabeled_weak_data, unlabeled_strong_data, model, idxs):
     target_train_weak_loader = DataLoader(DatasetSplit(unlabeled_weak_data, idxs), batch_size=args.local_bs,
-                                          shuffle=True, num_workers=4)
+                                          shuffle=True, num_workers=8)
     target_train_strong_loader = DataLoader(DatasetSplit(unlabeled_strong_data, idxs), batch_size=args.local_bs,
-                                            shuffle=True, num_workers=4)
+                                            shuffle=True, num_workers=8)
 
     optimizer = torch.optim.SGD(
         [{'params': model.base_network.parameters()},
@@ -34,9 +34,11 @@ def client_train(args, unlabeled_weak_data, unlabeled_strong_data, model, idxs):
           'lr': 10 * args.lr}],
         lr=args.lr, momentum=args.momentum, weight_decay=args.l2_decay)
 
+    model.train()
+    
     for e in range(args.local_ep):
         batch_loss = []
-        model.train()
+
         n_batch = len(target_train_weak_loader)
 
         for i in range(n_batch):
@@ -60,6 +62,7 @@ def client_train(args, unlabeled_weak_data, unlabeled_strong_data, model, idxs):
     return model.state_dict()
 
 def server_train(args, source_loader, model):
+    model.train()
     optimizer = torch.optim.SGD(
         [{'params': model.base_network.parameters()},
          {'params': model.classifier_layer.parameters(),
@@ -95,6 +98,8 @@ def test(model, target_test_loader):
         correct, 100. * correct / len_target_dataset))
     return 1. * correct / len_target_dataset
 
+
+
 if __name__ == '__main__':
     # parse args
     args = args_parser()
@@ -107,8 +112,8 @@ if __name__ == '__main__':
     target_name = "amazon"
     print('Src: %s, Tar: %s' % (source_name, target_name))
 
-    source_data, _, target_test_data = load_data(source_name, target_name, data_dir='dataset/')
-    unlabeled_weak_data, unlabeled_strong_data = load_unlabeled_data(target_name, data_dir='dataset/')
+    source_data, _, target_test_data = load_data(source_name, target_name, data_dir="/data/xian/Office-31/")
+    unlabeled_weak_data, unlabeled_strong_data = load_unlabeled_data(target_name, data_dir="/data/xian/Office-31/")
 
     if args.iid:  # default false
         dict_users, dict_classes = data_iid(unlabeled_weak_data, args.num_users)
@@ -119,10 +124,10 @@ if __name__ == '__main__':
     non_iidness = calulate_non_iidness(args, dict_classes)
     print(f"non_iidness = {non_iidness}")
 
-    source_loader = DataLoader(source_data, batch_size=args.local_bs, shuffle=True, num_workers=4)
-    target_test_loader = DataLoader(target_test_data, batch_size=args.bs, shuffle=True, num_workers=4)
+    source_loader = DataLoader(source_data, batch_size=args.local_bs, shuffle=True, num_workers=8)
+    target_test_loader = DataLoader(target_test_data, batch_size=args.bs, shuffle=True, num_workers=8)
 
-    #define model
+    # define model
     global_model = models.Base_Net(args.n_class, base_net='resnet18').to(args.device)
 
 
